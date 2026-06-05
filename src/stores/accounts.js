@@ -43,46 +43,82 @@ export const useAccountsStore = defineStore('accounts', () => {
         return []
     }
 
+    function getErrorMessage(err, fallback) {
+        return err?.response?.data || fallback
+    }
+
+    async function requestAllAccounts(page = 0, size = 20) {
+        const response = await apiClient.get('/accounts', {
+            params: { page, size }
+        })
+        return normalizeAccounts(response.data)
+    }
+
+    async function requestAccountsByUserId(userId) {
+        const response = await apiClient.get('/accounts/user', {
+            params: { userId }
+        })
+        return normalizeAccounts(response.data)
+    }
+
+    async function requestAccountLimitUpdate(iban, limitsData) {
+        const response = await apiClient.patch(`/accounts/${encodeURIComponent(iban)}`, limitsData)
+        return response.data || true
+    }
+
+    function mergeAccountUpdate(iban, updatedAccount, limitsData) {
+        return accounts.value.map(account => {
+            if (account.iban !== iban) return account
+
+            return updatedAccount && typeof updatedAccount === 'object'
+                ? { ...account, ...updatedAccount }
+                : { ...account, ...limitsData }
+        })
+    }
+
     // Actions
     async function fetchAllAccounts(page = 0, size = 20) {
         loading.value = true
         error.value = null
-
         try {
-            const response = await apiClient.get('/accounts', {
-                params: { page, size }
-            })
-            // save accounts to pinia
-            accounts.value = normalizeAccounts(response.data)
+            const result = await requestAllAccounts(page, size)
+            if (result) accounts.value = result
+            return result
         } catch (err) {
-            error.value = err.response?.data || 'Failed to fetch accounts'
+            error.value = getErrorMessage(err, 'Failed to fetch accounts')
+            return null
         } finally {
             loading.value = false
         }
     }
 
-    async function fetchAccountsByUserId() {
+    async function fetchAccountsByUserId(userId = null) {
         const authStore = useAuthStore()
         loading.value = true
         error.value = null
 
+        if (!userId && !authStore.user) {
+            await authStore.fetchCurrentUser()
+        }
+
+        const resolvedUserId = userId ?? getUserId(authStore.user)
+        if (!resolvedUserId) {
+            error.value = 'Failed to fetch accounts: missing user ID'
+            loading.value = false
+            return null
+        }
+
         try {
-            if (!authStore.user) {
-                await authStore.fetchCurrentUser()
+            const directAccounts = await requestAccountsByUserId(resolvedUserId)
+            if (directAccounts) {
+                accounts.value = directAccounts
+                return accounts.value
             }
-
-            const userId = getUserId(authStore.user)
-            if (!userId) {
-                error.value = 'Failed to fetch accounts: missing user ID'
-                return
-            }
-
-            const response = await apiClient.get('/accounts/user', {
-                params: { userId }
-            })
-            accounts.value = normalizeAccounts(response.data)
+            error.value = 'Failed to fetch accounts'
+            return null
         } catch (err) {
-            error.value = err.response?.data || 'Failed to fetch accounts'
+            error.value = getErrorMessage(err, 'Failed to fetch accounts')
+            return null
         } finally {
             loading.value = false
         }
@@ -123,15 +159,15 @@ export const useAccountsStore = defineStore('accounts', () => {
     async function updateAccountLimits(iban, limitsData) {
         loading.value = true
         error.value = null
-
         try {
-            const response = await apiClient.patch(`/accounts/${ iban }`, limitsData)
-            // update account with new data
-            accounts.value = accounts.value.map(account =>
-                account.iban === iban ? response.data : account
-            )
+            const updatedAccount = await requestAccountLimitUpdate(iban, limitsData)
+            if (!updatedAccount) return null
+            accounts.value = mergeAccountUpdate(iban, updatedAccount, limitsData)
+            error.value = null
+            return updatedAccount
         } catch (err) {
-            error.value = err.response?.data || 'Failed to update account limits'
+            error.value = getErrorMessage(err, 'Failed to update account limits')
+            return null
         } finally {
             loading.value = false
         }
@@ -142,7 +178,7 @@ export const useAccountsStore = defineStore('accounts', () => {
         error.value = null
 
         try {
-            await apiClient.patch(`/accounts/${ iban} /close`)
+            await apiClient.patch(`/accounts/${encodeURIComponent(iban)}/close`)
             accounts.value = accounts.value.filter(account => account.iban !== iban)
         } catch (err) {
             error.value = err.response?.data || 'Failed to close the account'
