@@ -47,22 +47,6 @@ export const useAccountsStore = defineStore('accounts', () => {
         return err?.response?.data || fallback
     }
 
-    async function requestOrNull(request, fallback) {
-        try {
-            return await request()
-        } catch (err) {
-            error.value = getErrorMessage(err, fallback)
-            return null
-        }
-    }
-
-    function filterAccountsByUserId(allAccounts, userId) {
-        return allAccounts.filter(account => {
-            const ownerId = account.userId ?? account.customerId ?? account.ownerId ?? account.user?.id ?? account.customer?.id
-            return String(ownerId) === String(userId)
-        })
-    }
-
     async function requestAllAccounts(page = 0, size = 20) {
         const response = await apiClient.get('/accounts', {
             params: { page, size }
@@ -96,18 +80,16 @@ export const useAccountsStore = defineStore('accounts', () => {
     async function fetchAllAccounts(page = 0, size = 20) {
         loading.value = true
         error.value = null
-
-        const result = await requestOrNull(
-            () => requestAllAccounts(page, size),
-            'Failed to fetch accounts'
-        )
-
-        if (result) {
-            accounts.value = result
+        try {
+            const result = await requestAllAccounts(page, size)
+            if (result) accounts.value = result
+            return result
+        } catch (err) {
+            error.value = getErrorMessage(err, 'Failed to fetch accounts')
+            return null
+        } finally {
+            loading.value = false
         }
-
-        loading.value = false
-        return result
     }
 
     async function fetchAccountsByUserId(userId = null) {
@@ -126,36 +108,20 @@ export const useAccountsStore = defineStore('accounts', () => {
             return null
         }
 
-        const directAccounts = await requestOrNull(
-            () => requestAccountsByUserId(resolvedUserId),
-            'Failed to fetch accounts'
-        )
-
-        if (directAccounts) {
-            accounts.value = directAccounts
-            loading.value = false
-            return accounts.value
-        }
-
-        if (!userId) {
-            loading.value = false
+        try {
+            const directAccounts = await requestAccountsByUserId(resolvedUserId)
+            if (directAccounts) {
+                accounts.value = directAccounts
+                return accounts.value
+            }
+            error.value = 'Failed to fetch accounts'
             return null
-        }
-
-        const allAccounts = await requestOrNull(
-            () => requestAllAccounts(0, 100),
-            'Failed to fetch accounts'
-        )
-
-        if (!allAccounts) {
-            loading.value = false
+        } catch (err) {
+            error.value = getErrorMessage(err, 'Failed to fetch accounts')
             return null
+        } finally {
+            loading.value = false
         }
-
-        accounts.value = filterAccountsByUserId(allAccounts, resolvedUserId)
-        error.value = null
-        loading.value = false
-        return accounts.value
     }
 
     async function getAccountByIban(iban) {
@@ -193,21 +159,18 @@ export const useAccountsStore = defineStore('accounts', () => {
     async function updateAccountLimits(iban, limitsData) {
         loading.value = true
         error.value = null
-
-        const updatedAccount = await requestOrNull(
-            () => requestAccountLimitUpdate(iban, limitsData),
-            'Failed to update account limits'
-        )
-
-        if (!updatedAccount) {
-            loading.value = false
+        try {
+            const updatedAccount = await requestAccountLimitUpdate(iban, limitsData)
+            if (!updatedAccount) return null
+            accounts.value = mergeAccountUpdate(iban, updatedAccount, limitsData)
+            error.value = null
+            return updatedAccount
+        } catch (err) {
+            error.value = getErrorMessage(err, 'Failed to update account limits')
             return null
+        } finally {
+            loading.value = false
         }
-
-        accounts.value = mergeAccountUpdate(iban, updatedAccount, limitsData)
-        error.value = null
-        loading.value = false
-        return updatedAccount
     }
 
     async function closeAccount(iban) {

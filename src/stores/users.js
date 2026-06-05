@@ -27,15 +27,6 @@ export const useUsersStore = defineStore('users', () => {
         return err?.response?.data || fallback
     }
 
-    async function requestOrNull(request, fallback) {
-        try {
-            return await request()
-        } catch (err) {
-            error.value = getErrorMessage(err, fallback)
-            return null
-        }
-    }
-
     function findUserById(id) {
         return users.value.find(user => String(getUserId(user)) === String(id)) ?? null
     }
@@ -58,35 +49,31 @@ export const useUsersStore = defineStore('users', () => {
     async function fetchAllUsers(page = 0, size = 100) {
         loading.value = true
         error.value = null
-
-        const result = await requestOrNull(
-            () => requestUsers(page, size),
-            'Failed to fetch users'
-        )
-
-        if (result) {
-            users.value = result
+        try {
+            const result = await requestUsers(page, size)
+            if (result) users.value = result
+            return result
+        } catch (err) {
+            error.value = getErrorMessage(err, 'Failed to fetch users')
+            return null
+        } finally {
+            loading.value = false
         }
-
-        loading.value = false
-        return result
     }
 
     async function fetchPendingUsers(page = 0, size = 20) {
         loading.value = true
         error.value = null
-
-        const result = await requestOrNull(
-            () => requestPendingUsers(page, size),
-            'Failed to fetch pending users'
-        )
-
-        if (result) {
-            users.value = result
+        try {
+            const result = await requestPendingUsers(page, size)
+            if (result) users.value = result
+            return result
+        } catch (err) {
+            error.value = getErrorMessage(err, 'Failed to fetch pending users')
+            return null
+        } finally {
+            loading.value = false
         }
-
-        loading.value = false
-        return result
     }
 
     async function approveUser(id, accountLimits) {
@@ -114,14 +101,14 @@ export const useUsersStore = defineStore('users', () => {
             return selectedUser.value
         }
 
-        const allUsers = await requestOrNull(
-            () => requestUsers(0, 100),
-            'Failed to fetch user'
-        )
-
-        if (allUsers) {
-            users.value = allUsers
-            selectedUser.value = findUserById(id)
+        try {
+            const allUsers = await requestUsers(0, 100)
+            if (allUsers) {
+                users.value = allUsers
+                selectedUser.value = findUserById(id)
+            }
+        } catch (err) {
+            error.value = getErrorMessage(err, 'Failed to fetch user')
         }
 
         if (selectedUser.value) {
@@ -130,14 +117,14 @@ export const useUsersStore = defineStore('users', () => {
             return selectedUser.value
         }
 
-        const pendingUsers = await requestOrNull(
-            () => requestPendingUsers(0, 100),
-            'Failed to fetch user'
-        )
-
-        if (pendingUsers) {
-            users.value = pendingUsers
-            selectedUser.value = findUserById(id)
+        try {
+            const pendingUsers = await requestPendingUsers(0, 100)
+            if (pendingUsers) {
+                users.value = pendingUsers
+                selectedUser.value = findUserById(id)
+            }
+        } catch (err) {
+            error.value = getErrorMessage(err, 'Failed to fetch user')
         }
 
         if (!selectedUser.value && !error.value) {
