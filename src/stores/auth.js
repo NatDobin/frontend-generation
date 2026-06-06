@@ -12,6 +12,7 @@ export const useAuthStore = defineStore('auth', () => {
 const isLoggedIn = computed(() => !!token.value)
 const isEmployee = computed(() => user.value?.role === 'EMPLOYEE')
 const isCustomer = computed(() => user.value?.role === 'CUSTOMER')
+    const isApproved = computed(() => user.value?.status === 'APPROVED')
 
 async function login(email, password) {
     loading.value = true
@@ -84,10 +85,10 @@ async function initAuth() {
     }
 }
 
-return {
-    token, user, loading, error,
-    isLoggedIn, isEmployee, isCustomer,
-    login, logout, initAuth, fetchCurrentUser, register
-}
+    return {
+        token, user, loading, error,
+        isLoggedIn, isEmployee, isCustomer, isApproved,
+        login, logout, initAuth, fetchCurrentUser, register
+    }
 
 })

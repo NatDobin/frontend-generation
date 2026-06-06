@@ -62,7 +62,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
 
         try {
             const response = await apiClient.post('/transactions/transfer', {
-                fromAccountIban, toAccountIban, amount, description
+                fromAccountIban, toAccountIban, amount, description, transactionType: 'TRANSFER'
             })
             return response.data
         } catch (err) {
