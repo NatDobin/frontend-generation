@@ -76,9 +76,11 @@ async function handleLogin() {
 
   if (authStore.isLoggedIn) {
     if (authStore.isEmployee) {
-      router.push('/dashboard/employee')
+      router.push('/overview/employee')
+    } else if (authStore.isApproved) {
+      router.push('/overview/customer')
     } else {
-      router.push('/dashboard/customer')
+      router.push('/overview/pending')
     }
   }
 }
