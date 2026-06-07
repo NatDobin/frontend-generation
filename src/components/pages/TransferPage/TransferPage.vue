@@ -379,18 +379,9 @@ async function handleSubmit() {
     resetForm()
     await accountsStore.fetchAccountsByUserId(authStore.user?.id)
   } else {
-    const err = transactionsStore.error || ''
-    if (err.toLowerCase().includes('daily limit')) {
-      toast.error('Daily transfer limit reached.', {
-        description: `You have reached your daily limit of ${formatCurrency(selectedFromAccount.value?.dailyLimit)}. Try again tomorrow.`
-      })
-    } else if (err.toLowerCase().includes('absolute limit') || err.toLowerCase().includes('below')) {
-      toast.error('Transfer not allowed.', {
-        description: 'This transfer would bring the account below its minimum balance limit.'
-      })
-    } else {
-      toast.error('Transfer failed.', { description: err || 'Please try again.' })
-    }
+    const err = transactionsStore.error
+    const message = typeof err === 'string' ? err : err?.message || 'Transfer failed. Please try again.'
+    toast.error(message)
   }
 }
 
