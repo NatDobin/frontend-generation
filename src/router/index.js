@@ -6,6 +6,11 @@ import ATMPage from '../components/pages/ATMPage/ATMPage.vue'
 import CustomerDetail from '../components/pages/CustomerDetails/CustomerDetail.vue'
 import TransferPage from '../components/pages/TransferPage/TransferPage.vue'
 import CustomerOverviewPage from '../components/pages/CustomerOverviewPage/CustomerOverviewPage.vue'
+import EmployeeOverviewPage from '../components/pages/EmployeeOverviewPage/EmployeeOverviewPage.vue'
+import PendingApprovalsPage from '../components/pages/PendingApprovalsPage/PendingApprovalsPage.vue'
+import ApproveCustomerPage from '../components/pages/ApproveCustomerPage/ApproveCustomerPage.vue'
+import EmployeeTransferPage from '../components/pages/EmployeeTransferPage/EmployeeTransferPage.vue'
+import CustomerTransactionsPage from '../components/pages/CustomerTransactionsPage/CustomerTransactionsPage.vue'
 import AccountsPage from '../components/pages/AccountsPage/AccountsPage.vue'
 
 
@@ -52,13 +57,37 @@ const router = createRouter({
       component: CustomerOverviewPage
     },
     {
+      path: '/customer/transactions',
+      name: 'customer-transactions',
+      component: CustomerTransactionsPage,
+    },
+    {
+      path: '/employee/customers',
+      name: 'employee-customers',
+      component: EmployeeOverviewPage
+    },
+    {
+      path: '/employee/pending',
+      name: 'employee-pending',
+      component: PendingApprovalsPage
+    },
+    {
+      path: '/employee/pending/:id',
+      name: 'employee-approve-customer',
+      component: ApproveCustomerPage,
+    },
+    {
+      path: '/employee/transfer',
+      name: 'employee-transfer',
+      component: EmployeeTransferPage,
+    },
       path: '/customer/accounts',
       name: 'accounts',
       component: AccountsPage
     },
     {
-      path: '/customer/transactions',
-      name: 'transactions',
+      path: '/customer/transfer',
+      name: 'transfer',
       component: TransferPage
     }
   ]
