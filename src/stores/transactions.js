@@ -31,7 +31,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
     }
 
     function getErrorMessage(err, fallback) {
-        return err?.response?.data || fallback
+        return err?.response?.data?.message || err?.response?.data || fallback
     }
 
     async function requestAllTransactions(page = 0, size = 20) {

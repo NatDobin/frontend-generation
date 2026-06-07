@@ -6,6 +6,7 @@ import ATMPage from '../components/pages/ATMPage/ATMPage.vue'
 import CustomerDetail from '../components/pages/CustomerDetails/CustomerDetail.vue'
 import TransferPage from '../components/pages/TransferPage/TransferPage.vue'
 import CustomerOverviewPage from '../components/pages/CustomerOverviewPage/CustomerOverviewPage.vue'
+import AccountsPage from '../components/pages/AccountsPage/AccountsPage.vue'
 
 
 const router = createRouter({
@@ -41,16 +42,27 @@ const router = createRouter({
       component: CustomerDetail
     },
     {
-      path: '/overview/transfer',
+      path: '/customer/transfer',
       name: 'transfer',
       component: TransferPage
     },
     {
-      path: '/overview/customer',
+      path: '/dashboard/customer',
       name: 'customer',
       component: CustomerOverviewPage
+    },
+    {
+      path: '/customer/accounts',
+      name: 'accounts',
+      component: AccountsPage
+    },
+    {
+      path: '/customer/transactions',
+      name: 'transactions',
+      component: TransferPage
     }
   ]
 })
+
 
 export default router
