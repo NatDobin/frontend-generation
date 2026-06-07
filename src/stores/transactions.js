@@ -35,7 +35,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
     }
 
     function getErrorMessage(err, fallback) {
-        return err?.response?.data || fallback
+        return err?.response?.data?.message || err?.response?.data || fallback
     }
 
     // normalize backend response - extract array from Page object or return as-is

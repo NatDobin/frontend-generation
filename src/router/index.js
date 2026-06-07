@@ -11,6 +11,7 @@ import PendingApprovalsPage from '../components/pages/PendingApprovalsPage/Pendi
 import ApproveCustomerPage from '../components/pages/ApproveCustomerPage/ApproveCustomerPage.vue'
 import EmployeeTransferPage from '../components/pages/EmployeeTransferPage/EmployeeTransferPage.vue'
 import CustomerTransactionsPage from '../components/pages/CustomerTransactionsPage/CustomerTransactionsPage.vue'
+import AccountsPage from '../components/pages/AccountsPage/AccountsPage.vue'
 
 
 const router = createRouter({
@@ -46,7 +47,7 @@ const router = createRouter({
       component: CustomerDetail
     },
     {
-      path: '/overview/transfer',
+      path: '/customer/transfer',
       name: 'transfer',
       component: TransferPage
     },
@@ -80,7 +81,17 @@ const router = createRouter({
       name: 'employee-transfer',
       component: EmployeeTransferPage,
     },
+      path: '/customer/accounts',
+      name: 'accounts',
+      component: AccountsPage
+    },
+    {
+      path: '/customer/transfer',
+      name: 'transfer',
+      component: TransferPage
+    }
   ]
 })
+
 
 export default router
