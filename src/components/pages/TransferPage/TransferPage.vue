@@ -170,8 +170,8 @@
               />
             </div>
 
-            <Button @click="handleNext" class="w-full h-16 rounded-2xl text-lg font-bold">
-              Review Transfer
+            <Button @click="handleNext" :disabled="validating" class="w-full h-16 rounded-2xl text-lg font-bold">
+              {{ validating ? 'Validating...' : 'Review Transfer' }}
               <ArrowRight class="h-5 w-5 ml-2" />
             </Button>
           </CardContent>
@@ -271,6 +271,7 @@ const description = ref('')
 const searchFirstName = ref('')
 const searchLastName = ref('')
 const searchResults = ref([])
+const validating = ref(false)
 
 onMounted(async () => {
   await accountsStore.fetchAccountsByUserId(authStore.user?.id)
@@ -302,7 +303,12 @@ async function handleSearch() {
   }
 }
 
-function handleNext() {
+// Dutch IBAN format: NL + 2 check digits + INHO + 10 digits
+function isValidDutchIban(iban) {
+  return /^NL\d{2}INHO\d{10}$/.test(iban.replace(/\s/g, '').toUpperCase())
+}
+
+async function handleNext() {
   const parsedAmount = parseFloat(amount.value)
 
   if (!amount.value || parsedAmount <= 0) {
@@ -325,9 +331,33 @@ function handleNext() {
     toast.error('Please select a destination account.')
     return
   }
-  if (transferType.value === 'other' && !toIban.value) {
-    toast.error('Please enter a recipient IBAN.')
-    return
+  if (transferType.value === 'other') {
+    if (!toIban.value) {
+      toast.error('Please enter a recipient IBAN.')
+      return
+    }
+
+    // Validate IBAN format before hitting the backend
+    if (!isValidDutchIban(toIban.value)) {
+      toast.error('Invalid IBAN format. Expected format: NL00INHO0000000000')
+      return
+    }
+
+    // Check that the destination IBAN is a CHECKING account — transfers to SAVINGS are not allowed
+    validating.value = true
+    try {
+      const response = await apiClient.get('/accounts/iban', { params: { iban: toIban.value } })
+      const destinationAccount = response.data
+      if (destinationAccount?.accountType === 'SAVINGS') {
+        toast.error('Transfers to savings accounts are not allowed. Please use a checking account IBAN.')
+        return
+      }
+    } catch {
+      toast.error('The destination IBAN could not be found. Please check the account number.')
+      return
+    } finally {
+      validating.value = false
+    }
   }
 
   step.value = 2
@@ -349,7 +379,18 @@ async function handleSubmit() {
     resetForm()
     await accountsStore.fetchAccountsByUserId(authStore.user?.id)
   } else {
-    toast.error(transactionsStore.error || 'Transfer failed')
+    const err = transactionsStore.error || ''
+    if (err.toLowerCase().includes('daily limit')) {
+      toast.error('Daily transfer limit reached.', {
+        description: `You have reached your daily limit of ${formatCurrency(selectedFromAccount.value?.dailyLimit)}. Try again tomorrow.`
+      })
+    } else if (err.toLowerCase().includes('absolute limit') || err.toLowerCase().includes('below')) {
+      toast.error('Transfer not allowed.', {
+        description: 'This transfer would bring the account below its minimum balance limit.'
+      })
+    } else {
+      toast.error('Transfer failed.', { description: err || 'Please try again.' })
+    }
   }
 }
 

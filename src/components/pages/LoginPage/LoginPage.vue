@@ -56,7 +56,8 @@
             Demo credentials
           </p>
           <div class="text-xs text-muted-foreground space-y-1 bg-white/40 p-3 rounded-lg">
-            <p class="font-mono">Customer: customer@test.com</p>
+            <p class="font-mono">Customer approved: customer@test.com</p>
+            <p class="font-mono">Customer pending: lola@test.com</p>
             <p class="font-mono">Employee: employee@test.com</p>
             <p class="font-mono">Password: password123</p>
           </div>
