@@ -1,6 +1,6 @@
 <template>
   <AppLayout
-      :user-name="authStore.user?.firstName + ' ' + authStore.user?.lastName"
+      :user-name="authStore.displayName"
       user-role="Customer"
       :items="navItems"
       active-key="accounts"
@@ -142,15 +142,16 @@ const navItems = [
 ]
 
 onMounted(async () => {
-  await accountsStore.fetchAccountsByUserId(authStore.user.id)
+  if (authStore.user?.id) {
+    await accountsStore.fetchAccountsByUserId(authStore.user.id)
+  }
 })
 
 const accounts = computed(() => accountsStore.accounts)
-const totalBalance = computed(() => accounts.value.reduce((sum, a) => sum + a.balance, 0))
+const totalBalance = computed(() => accounts.value.reduce((sum, a) => sum + (a.balance ?? 0), 0))
 
-const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(amount)
-}
+const formatCurrency = (amount) =>
+    new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(amount ?? 0)
 
 function handleSelect(key) {
   const routes = {

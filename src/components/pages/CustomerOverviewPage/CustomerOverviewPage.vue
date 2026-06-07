@@ -1,6 +1,6 @@
 <template>
   <AppLayout
-      :user-name="authStore.user?.firstName + ' ' + authStore.user?.lastName"
+      :user-name="authStore.displayName"
       user-role="Customer"
       :items="navItems"
       active-key="overview"
@@ -114,7 +114,6 @@
                 <span class="text-xs font-bold text-muted-foreground uppercase tracking-widest ml-2">Address</span>
                 <span class="text-sm font-medium ml-2">{{ profileUser.address.addressLine }}</span>
               </div>
-
               <div v-if="profileUser.address?.postalCode" class="p-4 bg-muted/30 rounded-3xl border border-border flex flex-col gap-1">
                 <span class="text-xs font-bold text-muted-foreground uppercase tracking-widest ml-2">Postal Code</span>
                 <span class="text-sm font-medium ml-2">{{ profileUser.address.postalCode }}</span>
@@ -161,21 +160,21 @@ const navItems = [
   { key: 'atm', label: 'ATM', icon: Landmark },
 ]
 
-
 onMounted(async () => {
-  await accountsStore.fetchAccountsByUserId(authStore.user.id)
+  if (authStore.user?.id) {
+    await accountsStore.fetchAccountsByUserId(authStore.user.id)
+  }
 })
 
 const checkingAccount = computed(() => accountsStore.checkingAccount)
 const savingsAccount = computed(() => accountsStore.savingsAccount)
 
-const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(amount)
-}
+const formatCurrency = (amount) =>
+    new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(amount ?? 0)
 
 async function toggleProfile() {
   showProfile.value = !showProfile.value
-  if (showProfile.value && !profileUser.value) {
+  if (showProfile.value && !profileUser.value && authStore.user?.id) {
     const res = await apiClient.get(`/users/${authStore.user.id}`)
     profileUser.value = res.data
   }

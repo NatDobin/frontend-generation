@@ -1,6 +1,6 @@
 <template>
   <AppLayout
-      :user-name="authStore.user?.firstName + ' ' + authStore.user?.lastName"
+      :user-name="authStore.displayName"
       user-role="Customer"
       :items="navItems"
       active-key="overview"

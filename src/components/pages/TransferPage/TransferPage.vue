@@ -1,6 +1,6 @@
 <template>
   <AppLayout
-      :user-name="authStore.user?.firstName + ' ' + authStore.user?.lastName"
+      :user-name="authStore.displayName"
       user-role="Customer"
       :items="navItems"
       active-key="transfer"
@@ -55,7 +55,7 @@
               <div class="flex bg-muted p-1 rounded-full">
                 <button
                     type="button"
-                    @click="transferType = 'own'; toIban = ''; searchResult = null"
+                    @click="transferType = 'own'; toIban = ''; searchResults = []"
                     :class="['py-2 px-6 rounded-full text-sm font-bold transition-all', transferType === 'own' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground']"
                 >
                   My Accounts
@@ -78,7 +78,11 @@
                   <SelectValue placeholder="Select account..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem v-for="account in transferType === 'other' ? accounts.filter(a => a.accountType === 'CHECKING') : accounts" :key="account.iban" :value="account.iban">
+                  <SelectItem
+                      v-for="account in transferType === 'other' ? accounts.filter(a => a.accountType === 'CHECKING') : accounts"
+                      :key="account.iban"
+                      :value="account.iban"
+                  >
                     <div class="flex justify-between items-center gap-4">
                       <span class="font-semibold">{{ account.accountType === 'CHECKING' ? 'Checking' : 'Savings' }}</span>
                       <span class="text-muted-foreground">{{ formatCurrency(account.balance) }}</span>
@@ -132,7 +136,6 @@
                   >
                     <Search class="w-4 h-4" /> Search
                   </button>
-
                 </div>
 
                 <div v-if="searchResults.length > 0" class="space-y-2">
@@ -140,7 +143,7 @@
                   <div
                       v-for="account in searchResults"
                       :key="account.iban"
-                      @click="toIban = account.iban; searchResult = account.iban"
+                      @click="toIban = account.iban"
                       :class="['p-4 rounded-2xl border cursor-pointer transition-colors', toIban === account.iban ? 'border-primary bg-primary/5' : 'border-border bg-muted/30 hover:border-primary/50']"
                   >
                     <div class="flex justify-between items-center">
@@ -231,8 +234,6 @@
   </AppLayout>
 </template>
 
-
-
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
@@ -260,7 +261,6 @@ const navItems = [
   { key: 'atm', label: 'ATM', icon: Landmark },
 ]
 
-// Estado del formulario
 const step = ref(1)
 const transferType = ref('own')
 const fromAccount = ref('')
@@ -268,63 +268,57 @@ const toAccount = ref('')
 const toIban = ref('')
 const amount = ref('')
 const description = ref('')
-
-// Búsqueda por nombre
 const searchFirstName = ref('')
 const searchLastName = ref('')
-const searchResult = ref(null)
+const searchResults = ref([])
 
 onMounted(async () => {
-  await accountsStore.fetchAccountsByUserId(authStore.user.id)
+  await accountsStore.fetchAccountsByUserId(authStore.user?.id)
 })
 
-// Computed
 const accounts = computed(() => accountsStore.accounts)
 const selectedFromAccount = computed(() => accounts.value.find(a => a.iban === fromAccount.value))
 const selectedToAccount = computed(() => accounts.value.find(a => a.iban === toAccount.value))
-const searchResults = ref([])
 
-const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(amount)
-}
+const formatCurrency = (value) =>
+    new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(value ?? 0)
 
 async function handleSearch() {
   try {
     const response = await apiClient.get('/accounts/search', {
       params: { firstName: searchFirstName.value, lastName: searchLastName.value }
     })
-    if (response.data && response.data.length > 0) {
-      searchResults.value = response.data.filter(a => a.accountType === 'CHECKING')
-      if (searchResults.value.length > 0) {
-        toast.success(`Found ${searchResults.value.length} account(s)`)
-      } else {
-        toast.error('No checking accounts found for this customer')
-      }
+    const results = Array.isArray(response.data) ? response.data : []
+    searchResults.value = results.filter(a => a.accountType === 'CHECKING')
+
+    if (searchResults.value.length > 0) {
+      toast.success(`Found ${searchResults.value.length} account(s)`)
     } else {
-      searchResults.value = []
-      toast.error('Customer not found')
+      toast.error('No checking accounts found for this customer')
     }
-  } catch (err) {
+  } catch {
     searchResults.value = []
     toast.error('Customer not found')
   }
 }
 
 function handleNext() {
-  if (!amount.value || parseFloat(amount.value) <= 0) {
+  const parsedAmount = parseFloat(amount.value)
+
+  if (!amount.value || parsedAmount <= 0) {
     toast.error('Please enter a valid amount.')
-    return
-  }
-  if (selectedFromAccount.value && parseFloat(amount.value) > selectedFromAccount.value.balance) {
-    toast.error('Insufficient balance.')
-    return
-  }
-  if (selectedFromAccount.value && parseFloat(amount.value) > selectedFromAccount.value.dailyLimit) {
-    toast.error(`Amount exceeds your daily limit of ${formatCurrency(selectedFromAccount.value.dailyLimit)}`)
     return
   }
   if (!fromAccount.value) {
     toast.error('Please select an account to transfer from.')
+    return
+  }
+  if (selectedFromAccount.value && parsedAmount > selectedFromAccount.value.balance) {
+    toast.error('Insufficient balance.')
+    return
+  }
+  if (selectedFromAccount.value?.dailyLimit > 0 && parsedAmount > selectedFromAccount.value.dailyLimit) {
+    toast.error(`Amount exceeds your daily limit of ${formatCurrency(selectedFromAccount.value.dailyLimit)}`)
     return
   }
   if (transferType.value === 'own' && !toAccount.value) {
@@ -335,6 +329,7 @@ function handleNext() {
     toast.error('Please enter a recipient IBAN.')
     return
   }
+
   step.value = 2
 }
 
@@ -351,21 +346,23 @@ async function handleSubmit() {
     toast.success('Transfer completed successfully!', {
       description: `Transferred ${formatCurrency(parseFloat(amount.value))}`
     })
-    // Reset form
-    step.value = 1
-    fromAccount.value = ''
-    toAccount.value = ''
-    toIban.value = ''
-    amount.value = ''
-    description.value = ''
-    searchFirstName.value = ''
-    searchLastName.value = ''
-    searchResult.value = null
-    // Refresh accounts
-    await accountsStore.fetchAccountsByUserId(authStore.user.id)
+    resetForm()
+    await accountsStore.fetchAccountsByUserId(authStore.user?.id)
   } else {
     toast.error(transactionsStore.error || 'Transfer failed')
   }
+}
+
+function resetForm() {
+  step.value = 1
+  fromAccount.value = ''
+  toAccount.value = ''
+  toIban.value = ''
+  amount.value = ''
+  description.value = ''
+  searchFirstName.value = ''
+  searchLastName.value = ''
+  searchResults.value = []
 }
 
 function handleSelect(key) {
