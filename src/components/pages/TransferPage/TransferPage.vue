@@ -4,6 +4,7 @@
       user-role="Customer"
       :items="navItems"
       active-key="transfer"
+      @select="handleSelect"
       @logout="handleLogout"
   >
     <div class="max-w-2xl mx-auto w-full space-y-8 py-8">
@@ -235,7 +236,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowRight, ArrowLeft, Search, CheckCircle, AlertCircle, Home, ArrowLeftRight } from '@lucide/vue'
+import { ArrowRight, ArrowLeft, Search, CheckCircle, AlertCircle, Home, ArrowLeftRight, Wallet, CreditCard, Landmark } from '@lucide/vue'
 import { useAuthStore } from '../../../stores/auth.js'
 import { useAccountsStore } from '../../../stores/accounts.js'
 import { useTransactionsStore } from '../../../stores/transactions.js'
@@ -253,7 +254,10 @@ const transactionsStore = useTransactionsStore()
 
 const navItems = [
   { key: 'overview', label: 'Overview', icon: Home },
+  { key: 'accounts', label: 'Accounts', icon: Wallet },
+  { key: 'transactions', label: 'Transactions', icon: CreditCard },
   { key: 'transfer', label: 'Transfer', icon: ArrowLeftRight },
+  { key: 'atm', label: 'ATM', icon: Landmark },
 ]
 
 // Estado del formulario
@@ -362,6 +366,16 @@ async function handleSubmit() {
   } else {
     toast.error(transactionsStore.error || 'Transfer failed')
   }
+}
+
+function handleSelect(key) {
+  const routes = {
+    overview: '/dashboard/customer',
+    accounts: '/customer/accounts',
+    transactions: '/customer/transactions',
+    atm: '/atm',
+  }
+  if (routes[key]) router.push(routes[key])
 }
 
 function handleLogout() {

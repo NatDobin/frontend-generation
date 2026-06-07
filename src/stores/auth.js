@@ -14,25 +14,27 @@ const isEmployee = computed(() => user.value?.role === 'EMPLOYEE')
 const isCustomer = computed(() => user.value?.role === 'CUSTOMER')
     const isApproved = computed(() => user.value?.status === 'APPROVED')
 
-async function login(email, password) {
-    loading.value = true
-    error.value = null
+    async function login(email, password) {
+        loading.value = true
+        error.value = null
 
-    try {
-        //get token as string
-        const response = await apiClient.post('/auth/login', { email, password })
-        token.value = response.data
-        setAuthToken(response.data)
+        try {
+            const response = await apiClient.post('/auth/login', { email, password })
+            token.value = response.data
+            setAuthToken(response.data)
 
-        //get the user object
-        const meResponse = await apiClient.get('/auth/me')
-        user.value = meResponse.data
-    } catch (err) {
-        error.value = err.response?.data || 'Login failed'
-    } finally {
-        loading.value = false
+            const meResponse = await apiClient.get('/auth/me')
+            user.value = meResponse.data
+        } catch (err) {
+            error.value = err.response?.data?.message || 'Login failed'
+            // clean token if login fails
+            token.value = null
+            user.value = null
+            setAuthToken(null)
+        } finally {
+            loading.value = false
+        }
     }
-}
 
 async function fetchCurrentUser() {
     if (!token.value) return null

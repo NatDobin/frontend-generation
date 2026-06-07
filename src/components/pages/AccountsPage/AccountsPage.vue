@@ -122,7 +122,7 @@
 <script setup>
 import { onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Home, ArrowLeftRight, Wallet, PiggyBank, AlertCircle, CheckCircle } from '@lucide/vue'
+import { Home, ArrowLeftRight, Wallet, PiggyBank, AlertCircle, CheckCircle, CreditCard, Landmark } from '@lucide/vue'
 import { useAuthStore } from '../../../stores/auth.js'
 import { useAccountsStore } from '../../../stores/accounts.js'
 import { AppLayout } from '../../organisms'
@@ -135,8 +135,10 @@ const accountsStore = useAccountsStore()
 
 const navItems = [
   { key: 'overview', label: 'Overview', icon: Home },
-  { key: 'accounts', label: 'My Accounts', icon: Wallet },
+  { key: 'accounts', label: 'Accounts', icon: Wallet },
+  { key: 'transactions', label: 'Transactions', icon: CreditCard },
   { key: 'transfer', label: 'Transfer', icon: ArrowLeftRight },
+  { key: 'atm', label: 'ATM', icon: Landmark },
 ]
 
 onMounted(async () => {
@@ -151,8 +153,13 @@ const formatCurrency = (amount) => {
 }
 
 function handleSelect(key) {
-  if (key === 'overview') router.push('/overview/customer')
-  if (key === 'transfer') router.push('/transfer')
+  const routes = {
+    overview: '/dashboard/customer',
+    transactions: '/customer/transactions',
+    transfer: '/customer/transfer',
+    atm: '/atm',
+  }
+  if (routes[key]) router.push(routes[key])
 }
 
 function handleLogout() {

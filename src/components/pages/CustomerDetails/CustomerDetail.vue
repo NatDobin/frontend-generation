@@ -174,61 +174,109 @@
                 <h2 class="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Transactions</h2>
               </div>
               <CardContent class="p-6 md:p-8">
+
                 <!-- Loading -->
                 <div v-if="txLoading" class="py-12 text-center text-gray-500 font-medium">
                   Loading transactions...
                 </div>
 
-                <!-- Empty -->
+                <!-- No data -->
                 <div v-else-if="transactions.length === 0" class="py-12 text-center text-gray-500 font-medium">
                   No transactions found for this customer.
                 </div>
 
-                <!-- List -->
-                <div v-else class="space-y-4">
-                  <div
-                      v-for="tx in transactions"
-                      :key="tx.id"
-                      class="flex flex-col gap-4 p-5 bg-gray-50/80 border border-gray-100 rounded-3xl hover:border-primary/20 transition-colors"
-                  >
-                    <div class="flex items-start justify-between gap-4">
-                      <div class="flex items-start gap-4 min-w-0 flex-1">
-                        <div :class="['p-3 rounded-2xl flex-shrink-0', tx.transactionType === 'DEPOSIT' ? 'bg-green-100' : 'bg-red-100']">
-                          <ArrowDownRight v-if="tx.transactionType === 'DEPOSIT'" class="h-6 w-6 text-green-600" />
-                          <ArrowUpRight v-else class="h-6 w-6 text-red-600" />
-                        </div>
-                        <div class="min-w-0 flex-1 mt-1">
-                          <p class="font-bold text-gray-900 text-lg break-words">{{ tx.description || tx.transactionType }}</p>
-                          <p class="text-sm text-gray-500 mt-1">{{ formatDateTime(tx.timestamp) }}</p>
-                        </div>
-                      </div>
-                      <p class="font-bold text-xl flex-shrink-0 mt-1">{{ formatCurrency(tx.amount) }}</p>
+                <!-- Data -->
+                <template v-else>
+                  <!-- Filters -->
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div>
+                      <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-2">Type</p>
+                      <select
+                          v-model="filterType"
+                          class="w-full h-12 px-4 rounded-2xl bg-gray-50/80 border border-gray-100 text-sm font-medium text-gray-700"
+                      >
+                        <option value="ALL">All Types</option>
+                        <option value="TRANSFER">Transfer</option>
+                        <option value="DEPOSIT">Deposit</option>
+                        <option value="WITHDRAWAL">Withdrawal</option>
+                      </select>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-4 border-t border-gray-100">
-                      <div>
-                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 ml-2">From Account</p>
-                        <p class="text-sm font-mono text-gray-700 break-all ml-2">{{ tx.fromAccountIban || '—' }}</p>
+                    <div>
+                      <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-2">Amount</p>
+                      <select
+                          v-model="filterAmountOperator"
+                          class="w-full h-12 px-4 rounded-2xl bg-gray-50/80 border border-gray-100 text-sm font-medium text-gray-700"
+                      >
+                        <option value="ANY">Any Amount</option>
+                        <option value="GT">Greater Than</option>
+                        <option value="LT">Less Than</option>
+                      </select>
+                    </div>
+
+                    <div v-if="filterAmountOperator !== 'ANY'">
+                      <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-2">Amount (€)</p>
+                      <input
+                          v-model="filterAmountValue"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          class="w-full h-12 px-4 rounded-2xl bg-gray-50/80 border border-gray-100 text-sm font-medium text-gray-700"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- No results after filter -->
+                  <div v-if="filteredTransactions.length === 0" class="py-8 text-center text-gray-500 font-medium">
+                    No transactions match the current filters.
+                  </div>
+
+                  <!-- List -->
+                  <div v-else class="space-y-4">
+                    <div
+                        v-for="tx in filteredTransactions"
+                        :key="tx.id"
+                        class="flex flex-col gap-4 p-5 bg-gray-50/80 border border-gray-100 rounded-3xl hover:border-primary/20 transition-colors"
+                    >
+                      <div class="flex items-start justify-between gap-4">
+                        <div class="flex items-start gap-4 min-w-0 flex-1">
+                          <div :class="['p-3 rounded-2xl flex-shrink-0', tx.transactionType === 'DEPOSIT' ? 'bg-green-100' : 'bg-red-100']">
+                            <ArrowDownRight v-if="tx.transactionType === 'DEPOSIT'" class="h-6 w-6 text-green-600" />
+                            <ArrowUpRight v-else class="h-6 w-6 text-red-600" />
+                          </div>
+                          <div class="min-w-0 flex-1 mt-1">
+                            <p class="font-bold text-gray-900 text-lg break-words">{{ tx.description || tx.transactionType }}</p>
+                            <p class="text-sm text-gray-500 mt-1">{{ formatDateTime(tx.timestamp) }}</p>
+                          </div>
+                        </div>
+                        <p class="font-bold text-xl flex-shrink-0 mt-1">{{ formatCurrency(tx.amount) }}</p>
                       </div>
-                      <div>
-                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 ml-2">To Account</p>
-                        <p class="text-sm font-mono text-gray-700 break-all ml-2">{{ tx.toAccountIban || '—' }}</p>
-                      </div>
-                      <div>
-                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 ml-2">Type</p>
-                        <p class="text-sm font-medium text-gray-700 ml-2 capitalize">{{ tx.transactionType?.toLowerCase() }}</p>
-                      </div>
-                      <div>
-                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 ml-2">Initiated By</p>
-                        <p class="text-sm font-medium text-gray-700 ml-2">
-                          {{ tx.initiatedBy ? tx.initiatedBy.firstName + ' ' + tx.initiatedBy.lastName : '—' }}
-                        </p>
+
+                      <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-4 border-t border-gray-100">
+                        <div>
+                          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 ml-2">From Account</p>
+                          <p class="text-sm font-mono text-gray-700 break-all ml-2">{{ tx.fromAccountIban || '—' }}</p>
+                        </div>
+                        <div>
+                          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 ml-2">To Account</p>
+                          <p class="text-sm font-mono text-gray-700 break-all ml-2">{{ tx.toAccountIban || '—' }}</p>
+                        </div>
+                        <div>
+                          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 ml-2">Type</p>
+                          <p class="text-sm font-medium text-gray-700 ml-2 capitalize">{{ tx.transactionType?.toLowerCase() }}</p>
+                        </div>
+                        <div>
+                          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 ml-2">Initiated By</p>
+                          <p class="text-sm font-medium text-gray-700 ml-2">
+                            {{ tx.initiatedBy ? tx.initiatedBy.firstName + ' ' + tx.initiatedBy.lastName : '—' }}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <!-- Pagination -->
+                  <!-- Pagination -->
                 <div v-if="txPage && txPage.totalPages > 1" class="flex items-center justify-center gap-4 mt-8 pt-6 border-t border-gray-100">
                   <button
                       @click="changeTxPage(txCurrentPage - 1)"
@@ -248,6 +296,7 @@
                     Next
                   </button>
                 </div>
+                </template>
               </CardContent>
             </Card>
           </TabsContent>
@@ -341,6 +390,23 @@ const txPage = ref<any>(null)
 const txLoading = ref(false)
 const txCurrentPage = ref(0)
 const transactions = computed(() => txPage.value?.content ?? [])
+
+//for filtering the transactions
+const filterType = ref('ALL')
+const filterAmountOperator = ref('ANY')
+const filterAmountValue = ref('')
+
+const filteredTransactions = computed(() => {
+  return transactions.value.filter(tx => {
+    if (filterType.value !== 'ALL' && tx.transactionType !== filterType.value) return false
+    if (filterAmountOperator.value !== 'ANY' && filterAmountValue.value) {
+      const amt = parseFloat(filterAmountValue.value)
+      if (filterAmountOperator.value === 'GT' && tx.amount <= amt) return false
+      if (filterAmountOperator.value === 'LT' && tx.amount >= amt) return false
+    }
+    return true
+  })
+})
 
 const sidebarItems = [
   { key: 'customers', label: 'Customers', icon: Users },

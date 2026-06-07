@@ -40,6 +40,16 @@
           </Button>
         </div>
 
+        <!-- Register link -->
+        <div class="mt-4 text-center">
+          <p class="text-sm text-muted-foreground">
+            Don't have an account?
+            <router-link to="/register" class="text-primary font-medium hover:underline">
+              Register here
+            </router-link>
+          </p>
+        </div>
+
         <!-- Demo credentials -->
         <div class="mt-6 pt-6 border-t border-border/60">
           <p class="text-xs text-muted-foreground text-center mb-3 uppercase tracking-wider font-semibold">
@@ -57,7 +67,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Cloud } from '@lucide/vue'
 import { useAuthStore } from '../../../stores/auth.js'
@@ -71,14 +81,22 @@ const authStore = useAuthStore()
 const email = ref('')
 const password = ref('')
 
+watch([email, password], () => {
+  authStore.error = null
+})
+
+onMounted(() => {
+  authStore.error = null
+})
+
 async function handleLogin() {
   await authStore.login(email.value, password.value)
 
   if (authStore.isLoggedIn) {
     if (authStore.isEmployee) {
-      router.push('/overview/employee')
+      router.push('/dashboard/employee')
     } else if (authStore.isApproved) {
-      router.push('/overview/customer')
+      router.push('/dashboard/customer')
     } else {
       router.push('/overview/pending')
     }

@@ -110,13 +110,14 @@
           </div>
           <CardContent class="p-8">
             <div class="space-y-4">
-              <div class="p-4 bg-muted/30 rounded-3xl border border-border flex flex-col gap-1">
+              <div v-if="profileUser.address?.addressLine" class="p-4 bg-muted/30 rounded-3xl border border-border flex flex-col gap-1">
                 <span class="text-xs font-bold text-muted-foreground uppercase tracking-widest ml-2">Address</span>
-                <span class="text-sm font-medium ml-2">{{ profileUser.address?.addressLine }}</span>
+                <span class="text-sm font-medium ml-2">{{ profileUser.address.addressLine }}</span>
               </div>
-              <div class="p-4 bg-muted/30 rounded-3xl border border-border flex flex-col gap-1">
+
+              <div v-if="profileUser.address?.postalCode" class="p-4 bg-muted/30 rounded-3xl border border-border flex flex-col gap-1">
                 <span class="text-xs font-bold text-muted-foreground uppercase tracking-widest ml-2">Postal Code</span>
-                <span class="text-sm font-medium ml-2">{{ profileUser.address?.postalCode }}</span>
+                <span class="text-sm font-medium ml-2">{{ profileUser.address.postalCode }}</span>
               </div>
               <div class="p-4 bg-muted/30 rounded-3xl border border-border flex flex-col gap-1">
                 <span class="text-xs font-bold text-muted-foreground uppercase tracking-widest ml-2">City</span>
@@ -137,7 +138,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Home, ArrowLeftRight, Wallet, PiggyBank, User, ChevronDown, ChevronUp } from '@lucide/vue'
+import { Home, ArrowLeftRight, Wallet, PiggyBank, User, ChevronDown, ChevronUp, CreditCard, Landmark } from '@lucide/vue'
 import { useAuthStore } from '../../../stores/auth.js'
 import { useAccountsStore } from '../../../stores/accounts.js'
 import { AppLayout } from '../../organisms'
@@ -154,8 +155,12 @@ const profileUser = ref(null)
 
 const navItems = [
   { key: 'overview', label: 'Overview', icon: Home },
+  { key: 'accounts', label: 'Accounts', icon: Wallet },
+  { key: 'transactions', label: 'Transactions', icon: CreditCard },
   { key: 'transfer', label: 'Transfer', icon: ArrowLeftRight },
+  { key: 'atm', label: 'ATM', icon: Landmark },
 ]
+
 
 onMounted(async () => {
   await accountsStore.fetchAccountsByUserId(authStore.user.id)
@@ -177,8 +182,13 @@ async function toggleProfile() {
 }
 
 function handleSelect(key) {
-  if (key === 'transfer') router.push('/transfer')
-  if (key === 'accounts') router.push('/accounts')
+  const routes = {
+    accounts: '/customer/accounts',
+    transactions: '/customer/transactions',
+    transfer: '/customer/transfer',
+    atm: '/atm',
+  }
+  if (routes[key]) router.push(routes[key])
 }
 
 function handleLogout() {
