@@ -12,6 +12,8 @@ import ApproveCustomerPage from '../components/pages/ApproveCustomerPage/Approve
 import EmployeeTransferPage from '../components/pages/EmployeeTransferPage/EmployeeTransferPage.vue'
 import CustomerTransactionsPage from '../components/pages/CustomerTransactionsPage/CustomerTransactionsPage.vue'
 import AccountsPage from '../components/pages/AccountsPage/AccountsPage.vue'
+import MyTransactionsPage from "@/components/pages/MyTransactionsPage/MyTransactionsPage.vue";
+import AllTransactionsPage from "@/components/pages/AllTransactionsPage/AllTransactionsPage.vue";
 
 import AccountListPage from '../components/pages/AccountListPage/AccountListPage.vue'
 
@@ -88,6 +90,21 @@ const router = createRouter({
       component: AccountsPage,
     },
     {
+      path: '/customer/transactions',
+      name: 'transactions',
+      component: TransferPage
+    },
+    {
+      path: '/customer/my-transactions',
+      name: 'my-transactions',
+      component: MyTransactionsPage
+    },
+    {
+      path: '/employee/transactions',
+      name: 'employee-transactions',
+      component: AllTransactionsPage
+    },
+      {
       path: '/customer/transfer',
       name: 'transfer',
       component: TransferPage,
