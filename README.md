@@ -75,12 +75,12 @@ The application uses environment variables for configuration. If you are using t
 
 ```env
 # API Domain - Base URL for API requests
-VITE_API_DOMAIN=http://localhost
+VITE_API_DOMAIN=https://backend-generation.onrender.com
 ```
 
 **Note:** In Vite, environment variables must be prefixed with `VITE_` to be exposed to client-side code.
 
-The default API domain is `http://localhost`. Update this to match your backend server.
+The default API domain is `https://backend-generation.onrender.com`. Update this to match your backend server.
 
 ### Using the Config
 

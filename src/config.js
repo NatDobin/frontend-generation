@@ -5,16 +5,16 @@
  * For Vite, use VITE_ prefix for environment variables.
  * 
  * Create a .env file in the frontend root to override defaults:
- * VITE_API_DOMAIN=http://localhost:8000
+ * VITE_API_DOMAIN=https://backend-generation.onrender.com
  */
 
 const config = {
   /**
    * API Domain - Base URL for API requests
    * @type {string}
-   * @default '/api'
+   * @default 'https://backend-generation.onrender.com'
    */
-  apiDomain: import.meta.env.VITE_API_DOMAIN || '/api',
+  apiDomain: import.meta.env.VITE_API_DOMAIN || 'https://backend-generation.onrender.com',
 };
 
 // Freeze config to prevent accidental mutations
