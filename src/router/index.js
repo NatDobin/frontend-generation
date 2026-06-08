@@ -13,6 +13,7 @@ import EmployeeTransferPage from '../components/pages/EmployeeTransferPage/Emplo
 import CustomerTransactionsPage from '../components/pages/CustomerTransactionsPage/CustomerTransactionsPage.vue'
 import AccountsPage from '../components/pages/AccountsPage/AccountsPage.vue'
 
+import AccountListPage from '../components/pages/AccountListPage/AccountListPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -91,6 +92,11 @@ const router = createRouter({
       name: 'transfer',
       component: TransferPage,
     },
+    {
+      path: '/employee/accounts',
+      name: 'employee-accounts',
+      component: AccountListPage
+    }
   ]
 })
 
