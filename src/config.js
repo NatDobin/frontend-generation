@@ -14,7 +14,7 @@ const config = {
    * @type {string}
    * @default 'https://backend-generation.onrender.com'
    */
-  apiDomain: import.meta.env.VITE_API_DOMAIN || 'https://backend-generation.onrender.com',
+  apiDomain: import.meta.env.VITE_API_DOMAIN || 'https://backend-generation-w4zi.onrender.com',
 };
 
 // Freeze config to prevent accidental mutations
